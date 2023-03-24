@@ -1,10 +1,33 @@
+from typing import Optional
+
 import pandas as pd
 
 from joblib import dump
 from pathlib import Path
 from otlang.sdk.syntax import Keyword, Positional, OTLType
 from pp_exec_env.base_command import BaseCommand, Syntax
-from ts_forecasting.ts_forecasting import TimeSeriesExponentialSmoothingForecaster
+from statsmodels.tsa.api import SimpleExpSmoothing
+
+
+class TimeSeriesExponentialSmoothingForecaster:
+    def fit(self,
+            target_df: pd.DataFrame,
+            target_col: str):
+        self.history_end = target_df.index.max()
+        self.model = SimpleExpSmoothing(target_df[target_col], initialization_method="estimated").fit()
+        return self
+
+    def predict(self,
+                period: int,
+                freq: str,
+                target_col_as: Optional[str] = "ets_prediction"):
+        predicted = self.model.forecast(period)
+        forecast_start = self.history_end + pd.Timedelta(1, unit=freq)
+        forecast_end = self.history_end + pd.Timedelta(period, unit=freq)
+        forecast_dates = pd.date_range(start=forecast_start, end=forecast_end, freq=freq)
+        result = pd.DataFrame(predicted, columns=[target_col_as])
+        result['_time'] = forecast_dates.view('int64') // 1000000000
+        return result
 
 
 class EtsCommand(BaseCommand):
