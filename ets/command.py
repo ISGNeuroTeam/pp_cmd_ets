@@ -9,10 +9,11 @@ class EtsCommand(BaseCommand):
     # define syntax of your command here
     syntax = Syntax(
         [
-            Positional("target_col", required=True, otl_type=OTLType.STRING),
-            Keyword("future", required=True, otl_type=OTLType.INTEGER),
-            Keyword("period", required=True, otl_type=OTLType.TEXT),
-            Keyword("to_file", required=False, otl_type=OTLType.TEXT)
+            Keyword("target_col", required=True, otl_type=OTLType.STRING),
+            Keyword("time_col", required=False, otl_type=OTLType.STRING),
+            Keyword("trend", required=False, otl_type=OTLType.STRING),
+            Keyword("periods", required=True, otl_type=OTLType.INTEGER),
+            Keyword("epoch_time", required=False, otl_type=OTLType.BOOLEAN)
         ],
     )
     use_timewindow = False  # Does not require time window arguments
@@ -22,22 +23,27 @@ class EtsCommand(BaseCommand):
         self.log_progress('Start ets command')
 
         target_col = self.get_arg('target_col').value
-        future = self.get_arg("future").value
-        freq = self.get_arg("period").value
+        periods = self.get_arg("periods").value
 
-        time_field = self.get_arg('time_field').value or '_time'
+        time_field = self.get_arg('time_col').value or '_time'
         if time_field not in df.columns:
             raise ValueError(f'Time column "{time_field}" not exist')
 
-        df['dt'] = pd.to_datetime(df[time_field])
+        trend = self.get_arg('trend').value or None
+        epoch_time = self.get_arg('epoch_time').value or False
+        unit = 's'
+        if not epoch_time:
+            unit = None
+
+        df['dt'] = pd.to_datetime(df[time_field], unit=unit)
         df = df.set_index('dt')
+        if not df.index.is_monotonic_increasing:
+            df.sort_values(by='dt', inplace=True)
 
-        copy_df = df.copy()
+        freq = pd.infer_freq(df.index)
 
-        model = TimeSeriesExponentialSmoothingForecaster().fit(copy_df[[target_col]], target_col)
-        predicted_df = model.predict(period=future, freq=freq, target_col_as=f'ets_prediction')
-
-        if (out_file := self.get_arg('to_file').value) is not None:
-            predicted_df.to_parquet(path=out_file)
+        model = TimeSeriesExponentialSmoothingForecaster().fit(target_df=df, target_col=target_col,
+                                                               trend=trend, freq=freq)
+        predicted_df = model.predict(period=periods, freq=freq, target_col_as=f'ets_prediction')
 
         return predicted_df
