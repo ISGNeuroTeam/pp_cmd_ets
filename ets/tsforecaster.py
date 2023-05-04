@@ -27,6 +27,6 @@ class TimeSeriesExponentialSmoothingForecaster:
                 target_col_as: Optional[str] = "ets_prediction"):
         predicted = self.model.forecast(period)
         result = predicted.to_frame(name=target_col_as)
-        result.index = result.index.view('int64') // 1000000000
+        result['_time'] = result.index.view('int64') // 1000000000
 
         return result
