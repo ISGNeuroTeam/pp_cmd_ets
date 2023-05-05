@@ -11,7 +11,7 @@ Usage example:
 ## optional parameters
 - `time_col` - to specify the name of the datetime column. `_time` by default, if not set.
 - `trend` - to specify trend model. It has only `add` option. `None` by default, if not set.
-- `epoch_time` - if datetime format is in epoch format set this parameter to `True`: `time_epoch=True`
+- `time_epoch` - if datetime format is in epoch format set this parameter to `True`: `time_epoch=True`
 if you datetime format is usual - do not use this parameter at all.
 
 ## Getting started
