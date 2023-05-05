@@ -13,7 +13,7 @@ class EtsCommand(BaseCommand):
             Keyword("time_col", required=False, otl_type=OTLType.STRING),
             Keyword("trend", required=False, otl_type=OTLType.STRING),
             Keyword("periods", required=True, otl_type=OTLType.INTEGER),
-            Keyword("epoch_time", required=False, otl_type=OTLType.BOOLEAN)
+            Keyword("time_epoch", required=False, otl_type=OTLType.BOOLEAN)
         ],
     )
     use_timewindow = False  # Does not require time window arguments
@@ -30,9 +30,9 @@ class EtsCommand(BaseCommand):
             raise ValueError(f'Time column "{time_field}" not exist')
 
         trend = self.get_arg('trend').value or None
-        epoch_time = self.get_arg('epoch_time').value or False
+        time_epoch = self.get_arg('time_epoch').value or False
         unit = 's'
-        if not epoch_time:
+        if not time_epoch:
             unit = None
 
         df['dt'] = pd.to_datetime(df[time_field], unit=unit)
